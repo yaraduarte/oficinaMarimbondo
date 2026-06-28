@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(if \\(-not $?\\) { \"Diret�rio vazio ou n�o existe\" })",
+      "Bash(xargs wc -l)"
+    ]
+  }
+}

@@ -1,0 +1,47 @@
+version: '3.8'
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: oficina_db
+      DB_USER: postgres
+      DB_PASS: postgres123
+      JWT_SECRET: dev-secret-key
+      JWT_EXPIRES_IN: 24h
+      SMTP_HOST: smtp.ethereal.email
+      SMTP_PORT: 587
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - oficina-net
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: oficina_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - oficina-net
+
+volumes:
+  postgres_data:
+
+networks:
+  oficina-net:
+    driver: bridge

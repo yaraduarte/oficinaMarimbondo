@@ -1,0 +1,14 @@
+# Copie este arquivo para terraform.tfvars e preencha com seus valores reais
+# NUNCA commite terraform.tfvars com valores reais
+
+cluster_name = "oficina-cluster"
+
+# Base64 encoded values
+# echo -n "postgres123" | base64
+db_pass = "cG9zdGdyZXMxMjM="
+
+# echo -n "your-super-secret-jwt-key" | base64
+jwt_secret = "eW91ci1zdXBlci1zZWNyZXQtand0LWtleQ=="
+
+smtp_user = ""
+smtp_pass = ""

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oficina-config
+  namespace: oficina-marimb0ndo
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "oficina_db"
+  DB_USER: "postgres"
+  JWT_EXPIRES_IN: "24h"
+  SMTP_HOST: "smtp.ethereal.email"
+  SMTP_PORT: "587"
+  SMTP_FROM: "noreply@oficina.com"
