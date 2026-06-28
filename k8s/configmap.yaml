@@ -11,6 +11,7 @@ data:
   DB_NAME: "oficina_db"
   DB_USER: "postgres"
   JWT_EXPIRES_IN: "24h"
+  DB_SYNCHRONIZE: "true"
   SMTP_HOST: "smtp.ethereal.email"
   SMTP_PORT: "587"
   SMTP_FROM: "noreply@oficina.com"
