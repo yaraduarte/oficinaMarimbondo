@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: oficina-api
-          image: oficina-marimb0ndo-api:latest
+          image: yaraduarte/oficina-marimb0ndo-api:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
