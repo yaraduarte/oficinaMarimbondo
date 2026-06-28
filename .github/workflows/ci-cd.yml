@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/oficina-marimb0ndo-api
+  DOCKER_IMAGE: yaraduarte/oficina-marimb0ndo-api
 
 jobs:
   test:
@@ -18,10 +18,10 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js 20
+      - name: Configurar Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Instalar dependências
@@ -54,7 +54,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build e Push da imagem
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
@@ -78,9 +78,22 @@ jobs:
           chmod +x ./kind
           sudo mv ./kind /usr/local/bin/kind
 
+      - name: Login no Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Criar cluster Kind
         run: |
-          kind create cluster --name oficina-cluster --wait 60s
+          kind create cluster --name oficina-cluster --wait 90s
+
+      - name: Puxar e carregar imagens no Kind
+        run: |
+          docker pull yaraduarte/oficina-marimb0ndo-api:latest
+          docker pull busybox:1.36
+          kind load docker-image yaraduarte/oficina-marimb0ndo-api:latest --name oficina-cluster
+          kind load docker-image busybox:1.36 --name oficina-cluster
 
       - name: Aplicar manifestos Kubernetes
         run: |
@@ -96,8 +109,11 @@ jobs:
 
       - name: Aguardar rollout da API
         run: |
-          kubectl rollout status deployment/postgres -n oficina-marimb0ndo --timeout=120s
-          kubectl rollout status deployment/oficina-api -n oficina-marimb0ndo --timeout=120s
+          kubectl rollout status deployment/postgres -n oficina-marimb0ndo --timeout=180s
+          kubectl rollout status deployment/oficina-api -n oficina-marimb0ndo --timeout=300s
 
       - name: Verificar pods
-        run: kubectl get pods -n oficina-marimb0ndo
+        if: always()
+        run: |
+          kubectl get pods -n oficina-marimb0ndo
+          kubectl get events -n oficina-marimb0ndo --sort-by='.lastTimestamp' | tail -20
