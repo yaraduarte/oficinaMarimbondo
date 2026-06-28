@@ -93,7 +93,7 @@ src/
 ```bash
 # 1. Clone o repositório
 git clone <repo-url>
-cd oficina-marimb0ndo-api
+cd oficinaMarimbondo
 
 # 2. Configure variáveis de ambiente
 cp .env.example .env
