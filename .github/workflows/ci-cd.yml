@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/oficina-marimb0ndo-api
+  DOCKER_IMAGE: yaraduarte/oficina-marimb0ndo-api
 
 jobs:
   test:
