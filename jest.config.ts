@@ -26,6 +26,8 @@ const config: Config = {
     '!src/infrastructure/database/migrations/**',
   ],
   coverageDirectory: 'coverage',
+  coverageReporters: ['lcov', 'text', 'json-summary'],
+  reporters: ['default', ['jest-sonar', { outputDirectory: 'coverage', outputName: 'test-report.xml' }]],
   verbose: true,
 };
 

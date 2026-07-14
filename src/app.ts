@@ -29,7 +29,13 @@ app.get('/health', (_req, res) => {
 });
 
 // Swagger docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    swaggerOptions: { docExpansion: 'list', defaultModelsExpandDepth: -1 },
+  }),
+);
 
 // API routes
 app.use('/api/auth', authRoutes);
