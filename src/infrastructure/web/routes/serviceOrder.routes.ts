@@ -10,7 +10,7 @@ import { TypeORMServiceRepository } from '../../database/repositories/TypeORMSer
 import { TypeORMPartRepository } from '../../database/repositories/TypeORMPartRepository';
 import { TypeORMClientRepository } from '../../database/repositories/TypeORMClientRepository';
 import { TypeORMVehicleRepository } from '../../database/repositories/TypeORMVehicleRepository';
-import { NodemailerEmailService } from '../../email/NodemailerEmailService';
+import { NotificationService } from '../../notification/NotificationService';
 import { AppDataSource } from '../../database/data-source';
 import { authMiddleware } from '../middlewares/authMiddleware';
 
@@ -21,7 +21,7 @@ const serviceRepository = new TypeORMServiceRepository(AppDataSource);
 const partRepository = new TypeORMPartRepository(AppDataSource);
 const clientRepository = new TypeORMClientRepository(AppDataSource);
 const vehicleRepository = new TypeORMVehicleRepository(AppDataSource);
-const emailService = new NodemailerEmailService();
+const notificationService = new NotificationService();
 
 const serviceOrderController = new ServiceOrderController(
   new CreateServiceOrderUseCase(
@@ -33,8 +33,8 @@ const serviceOrderController = new ServiceOrderController(
   ),
   new GetServiceOrderStatusUseCase(serviceOrderRepository),
   new ListServiceOrdersUseCase(serviceOrderRepository),
-  new ApproveQuoteUseCase(serviceOrderRepository, clientRepository, emailService),
-  new UpdateServiceOrderStatusUseCase(serviceOrderRepository, clientRepository, emailService),
+  new ApproveQuoteUseCase(serviceOrderRepository, clientRepository, notificationService),
+  new UpdateServiceOrderStatusUseCase(serviceOrderRepository, clientRepository, notificationService),
 );
 
 /**

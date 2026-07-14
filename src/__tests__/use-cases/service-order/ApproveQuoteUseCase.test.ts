@@ -4,7 +4,7 @@ import { ServiceOrder } from '../../../domain/entities/ServiceOrder';
 import { Client } from '../../../domain/entities/Client';
 import { IServiceOrderRepository } from '../../../domain/repositories/IServiceOrderRepository';
 import { IClientRepository } from '../../../domain/repositories/IClientRepository';
-import { IEmailService } from '../../../infrastructure/email/IEmailService';
+import { INotificationService } from '../../../infrastructure/notification/INotificationService';
 import { AppError } from '../../../shared/errors/AppError';
 
 function makeOrder(status: ServiceOrderStatus): ServiceOrder {
@@ -41,7 +41,7 @@ function makeClient(): Client {
 describe('ApproveQuoteUseCase', () => {
   let mockOrderRepo: jest.Mocked<IServiceOrderRepository>;
   let mockClientRepo: jest.Mocked<IClientRepository>;
-  let mockEmailService: jest.Mocked<IEmailService>;
+  let mockNotificationService: jest.Mocked<INotificationService>;
 
   beforeEach(() => {
     mockOrderRepo = {
@@ -62,8 +62,8 @@ describe('ApproveQuoteUseCase', () => {
       update: jest.fn(),
       softDelete: jest.fn(),
     };
-    mockEmailService = {
-      send: jest.fn().mockResolvedValue(undefined),
+    mockNotificationService = {
+      sendStatusUpdate: jest.fn().mockResolvedValue(undefined),
     };
   });
 
@@ -73,12 +73,19 @@ describe('ApproveQuoteUseCase', () => {
     mockOrderRepo.update.mockImplementation(async (o) => o);
     mockClientRepo.findById.mockResolvedValue(makeClient());
 
-    const useCase = new ApproveQuoteUseCase(mockOrderRepo, mockClientRepo, mockEmailService);
+    const useCase = new ApproveQuoteUseCase(mockOrderRepo, mockClientRepo, mockNotificationService);
     const result = await useCase.execute('order-1', { decision: 'approved' });
 
     expect(result.status).toBe(ServiceOrderStatus.EM_EXECUCAO);
     expect(result.approvedAt).not.toBeNull();
-    expect(mockEmailService.send).toHaveBeenCalledTimes(1);
+    expect(mockNotificationService.sendStatusUpdate).toHaveBeenCalledTimes(1);
+    expect(mockNotificationService.sendStatusUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clientName: 'Maria',
+        orderNumber: 'OS-2024-001',
+        newStatus: 'Em Execução',
+      }),
+    );
   });
 
   it('deve mudar status para FINALIZADA quando rejeitado', async () => {
@@ -87,27 +94,28 @@ describe('ApproveQuoteUseCase', () => {
     mockOrderRepo.update.mockImplementation(async (o) => o);
     mockClientRepo.findById.mockResolvedValue(makeClient());
 
-    const useCase = new ApproveQuoteUseCase(mockOrderRepo, mockClientRepo, mockEmailService);
+    const useCase = new ApproveQuoteUseCase(mockOrderRepo, mockClientRepo, mockNotificationService);
     const result = await useCase.execute('order-1', { decision: 'rejected' });
 
     expect(result.status).toBe(ServiceOrderStatus.FINALIZADA);
     expect(result.approvedAt).toBeNull();
+    expect(mockNotificationService.sendStatusUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ newStatus: 'Finalizada' }),
+    );
   });
 
   it('deve lançar erro se OS não estiver em AGUARDANDO_APROVACAO', async () => {
     const order = makeOrder(ServiceOrderStatus.RECEBIDA);
     mockOrderRepo.findById.mockResolvedValue(order);
 
-    const useCase = new ApproveQuoteUseCase(mockOrderRepo, mockClientRepo, mockEmailService);
-
+    const useCase = new ApproveQuoteUseCase(mockOrderRepo, mockClientRepo, mockNotificationService);
     await expect(useCase.execute('order-1', { decision: 'approved' })).rejects.toThrow(AppError);
   });
 
   it('deve lançar erro se OS não encontrada', async () => {
     mockOrderRepo.findById.mockResolvedValue(null);
 
-    const useCase = new ApproveQuoteUseCase(mockOrderRepo, mockClientRepo, mockEmailService);
-
+    const useCase = new ApproveQuoteUseCase(mockOrderRepo, mockClientRepo, mockNotificationService);
     await expect(useCase.execute('invalid-id', { decision: 'approved' })).rejects.toThrow(AppError);
   });
 });
