@@ -15,6 +15,15 @@ export function errorHandler(
     return;
   }
 
+  // JSON parse error from body-parser
+  if ((err as any).type === 'entity.parse.failed') {
+    res.status(400).json({
+      status: 'error',
+      message: 'JSON inválido no corpo da requisição',
+    });
+    return;
+  }
+
   console.error('[Unhandled Error]', err);
   res.status(500).json({
     status: 'error',
