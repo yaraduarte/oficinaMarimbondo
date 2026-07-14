@@ -18,17 +18,11 @@ import serviceOrderRoutes from './infrastructure/web/routes/serviceOrder.routes'
 const app = express();
 
 // Security & parsing
-app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check
-app.get('/health', (_req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Swagger docs
+// Swagger docs (sem helmet para não bloquear assets/fetch do Swagger UI)
 app.use(
   '/api-docs',
   swaggerUi.serve,
@@ -36,6 +30,14 @@ app.use(
     swaggerOptions: { docExpansion: 'list', defaultModelsExpandDepth: -1 },
   }),
 );
+
+// Aplica helmet nas rotas de API (após o Swagger)
+app.use(helmet());
+
+// Health check
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 // API routes
 app.use('/api/auth', authRoutes);
