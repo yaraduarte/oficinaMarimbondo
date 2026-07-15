@@ -89,15 +89,21 @@ router.get('/:id', clientController.getById);
  *             properties:
  *               name:
  *                 type: string
+ *                 example: João Silva
  *               cpfCnpj:
  *                 type: string
+ *                 example: "111.444.777-35"
  *               email:
  *                 type: string
+ *                 example: joao@email.com
  *               phone:
  *                 type: string
+ *                 example: "11999887766"
  *     responses:
  *       201:
- *         description: Cliente criado
+ *         description: Cliente criado — copie o `data.id` para usar no cadastro de veículo
+ *       409:
+ *         description: CPF/CNPJ ou e-mail já cadastrado
  *       422:
  *         description: CPF/CNPJ inválido
  */
@@ -111,6 +117,33 @@ router.post('/', clientController.create);
  *     tags: [Clients]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: João Silva Atualizado
+ *               email:
+ *                 type: string
+ *                 example: joao.novo@email.com
+ *               phone:
+ *                 type: string
+ *                 example: "11988887777"
+ *     responses:
+ *       200:
+ *         description: Cliente atualizado com sucesso
+ *       404:
+ *         description: Cliente não encontrado
  */
 router.put('/:id', clientController.update);
 
@@ -122,6 +155,17 @@ router.put('/:id', clientController.update);
  *     tags: [Clients]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: Cliente removido com sucesso
+ *       404:
+ *         description: Cliente não encontrado
  */
 router.delete('/:id', clientController.delete);
 
