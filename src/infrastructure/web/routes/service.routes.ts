@@ -30,8 +30,32 @@ router.use(authMiddleware);
  *     tags: [Services]
  *     security:
  *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de serviços
  */
 router.get('/', serviceController.list);
+
+/**
+ * @swagger
+ * /api/services/{id}:
+ *   get:
+ *     summary: Buscar serviço por ID
+ *     tags: [Services]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Serviço encontrado
+ *       404:
+ *         description: Serviço não encontrado
+ */
 router.get('/:id', serviceController.getById);
 
 /**
@@ -48,7 +72,48 @@ router.get('/:id', serviceController.getById);
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, description, price, estimatedHours]
+ *             required: [name, price, estimatedHours]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Troca de óleo
+ *               description:
+ *                 type: string
+ *                 example: Troca completa com filtro
+ *               price:
+ *                 type: number
+ *                 example: 80.00
+ *               estimatedHours:
+ *                 type: number
+ *                 example: 1
+ *     responses:
+ *       201:
+ *         description: Serviço cadastrado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ */
+router.post('/', serviceController.create);
+
+/**
+ * @swagger
+ * /api/services/{id}:
+ *   put:
+ *     summary: Atualizar serviço
+ *     tags: [Services]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
  *             properties:
  *               name:
  *                 type: string
@@ -58,9 +123,34 @@ router.get('/:id', serviceController.getById);
  *                 type: number
  *               estimatedHours:
  *                 type: number
+ *     responses:
+ *       200:
+ *         description: Serviço atualizado
+ *       404:
+ *         description: Serviço não encontrado
  */
-router.post('/', serviceController.create);
 router.put('/:id', serviceController.update);
+
+/**
+ * @swagger
+ * /api/services/{id}:
+ *   delete:
+ *     summary: Remover serviço
+ *     tags: [Services]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: Serviço removido
+ *       404:
+ *         description: Serviço não encontrado
+ */
 router.delete('/:id', serviceController.delete);
 
 export default router;

@@ -51,6 +51,17 @@ router.get('/', vehicleController.list);
  *     tags: [Vehicles]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Veículo encontrado
+ *       404:
+ *         description: Veículo não encontrado
  */
 router.get('/:id', vehicleController.getById);
 
@@ -75,12 +86,25 @@ router.get('/:id', vehicleController.getById);
  *                 example: ABC1D23
  *               brand:
  *                 type: string
+ *                 example: Fiat
  *               model:
  *                 type: string
+ *                 example: Uno
  *               year:
  *                 type: integer
+ *                 example: 2021
  *               clientId:
  *                 type: string
+ *                 example: cole-aqui-o-id-do-cliente
+ *     responses:
+ *       201:
+ *         description: Veículo cadastrado com sucesso
+ *       404:
+ *         description: Cliente não encontrado
+ *       409:
+ *         description: Placa já cadastrada
+ *       422:
+ *         description: Placa inválida
  */
 router.post('/', vehicleController.create);
 
@@ -92,6 +116,30 @@ router.post('/', vehicleController.create);
  *     tags: [Vehicles]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               brand:
+ *                 type: string
+ *               model:
+ *                 type: string
+ *               year:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Veículo atualizado
+ *       404:
+ *         description: Veículo não encontrado
  */
 router.put('/:id', vehicleController.update);
 
@@ -103,6 +151,17 @@ router.put('/:id', vehicleController.update);
  *     tags: [Vehicles]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: Veículo removido
+ *       404:
+ *         description: Veículo não encontrado
  */
 router.delete('/:id', vehicleController.delete);
 
