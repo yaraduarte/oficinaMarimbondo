@@ -52,6 +52,8 @@ const serviceOrderController = new ServiceOrderController(
  *     responses:
  *       200:
  *         description: Status atual da ordem de serviço
+ *       404:
+ *         description: OS não encontrada
  */
 router.get('/:id/status', serviceOrderController.getStatus);
 
@@ -78,9 +80,14 @@ router.get('/:id/status', serviceOrderController.getStatus);
  *               decision:
  *                 type: string
  *                 enum: [approved, rejected]
+ *                 example: approved
  *     responses:
  *       200:
- *         description: Decisão registrada
+ *         description: Decisão registrada com sucesso
+ *       404:
+ *         description: OS não encontrada
+ *       422:
+ *         description: OS não está aguardando aprovação
  */
 router.post('/:id/approve', serviceOrderController.approveQuote);
 
@@ -97,7 +104,7 @@ router.use(authMiddleware);
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Lista de OS ativas ordenadas por prioridade de status
+ *         description: Lista de OS ativas — EM_EXECUCAO > AGUARDANDO_APROVACAO > EM_DIAGNOSTICO > RECEBIDA
  */
 router.get('/', serviceOrderController.list);
 
@@ -136,6 +143,37 @@ router.get('/', serviceOrderController.list);
  *                       type: integer
  *               notes:
  *                 type: string
+ *                 example: Cliente relatou barulho no motor
+ *     responses:
+ *       201:
+ *         description: OS criada com sucesso — o campo `data.id` é o ID para usar nos próximos endpoints
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       description: ID da OS — use nos endpoints de status e aprovação
+ *                     orderNumber:
+ *                       type: string
+ *                       example: OS-2026-001
+ *                     status:
+ *                       type: string
+ *                       example: RECEBIDA
+ *                     budget:
+ *                       type: number
+ *                       example: 125.90
+ *       404:
+ *         description: Cliente, veículo ou serviço não encontrado
+ *       422:
+ *         description: Veículo não pertence ao cliente ou estoque insuficiente
  */
 router.post('/', serviceOrderController.create);
 
@@ -158,6 +196,21 @@ router.post('/', serviceOrderController.create);
  *               status:
  *                 type: string
  *                 enum: [RECEBIDA, EM_DIAGNOSTICO, AGUARDANDO_APROVACAO, EM_EXECUCAO, FINALIZADA, ENTREGUE]
+ *                 example: EM_DIAGNOSTICO
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID da OS retornado no POST de criação
+ *     responses:
+ *       200:
+ *         description: Status atualizado — notificação enviada por e-mail e WhatsApp
+ *       404:
+ *         description: OS não encontrada
+ *       422:
+ *         description: Transição de status inválida
  */
 router.patch('/:id/status', serviceOrderController.updateStatus);
 
