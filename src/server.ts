@@ -1,4 +1,5 @@
 import 'dotenv/config';
+if (process.env.NEW_RELIC_LICENSE_KEY) require('newrelic');
 import app from './app';
 import { AppDataSource } from './infrastructure/database/data-source';
 
