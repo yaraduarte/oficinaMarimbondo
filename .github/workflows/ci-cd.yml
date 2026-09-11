@@ -76,8 +76,8 @@ jobs:
           username: ec2-user
           key: ${{ secrets.K3S_SSH_PRIVATE_KEY }}
           script: |
-            kubectl set image deployment/oficina-api \
+            sudo kubectl set image deployment/oficina-api \
               oficina-api=yaraduarte/oficina-marimb0ndo-api:latest \
               -n oficina-marimb0ndo
-            kubectl rollout status deployment/oficina-api \
+            sudo kubectl rollout status deployment/oficina-api \
               -n oficina-marimb0ndo --timeout=120s
