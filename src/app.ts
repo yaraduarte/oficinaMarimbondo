@@ -36,7 +36,13 @@ app.use(helmet());
 
 // Health check
 app.get('/health', (_req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.status(200).json({
+    status: 'ok',
+    version: '3.0.0',
+    environment: process.env.NODE_ENV ?? 'development',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // API routes
