@@ -5,9 +5,11 @@ import { GetClientUseCase } from '../../../application/use-cases/client/GetClien
 import { ListClientsUseCase } from '../../../application/use-cases/client/ListClientsUseCase';
 import { UpdateClientUseCase } from '../../../application/use-cases/client/UpdateClientUseCase';
 import { DeleteClientUseCase } from '../../../application/use-cases/client/DeleteClientUseCase';
+import { UpdateClientStatusUseCase } from '../../../application/use-cases/client/UpdateClientStatusUseCase';
 import { TypeORMClientRepository } from '../../database/repositories/TypeORMClientRepository';
 import { AppDataSource } from '../../database/data-source';
-import { authMiddleware } from '../middlewares/authMiddleware';
+import { authMiddleware, requireRole } from '../middlewares/authMiddleware';
+import { UserRole } from '../../../domain/enums/UserRole';
 
 const router = Router();
 
@@ -18,6 +20,7 @@ const clientController = new ClientController(
   new ListClientsUseCase(clientRepository),
   new UpdateClientUseCase(clientRepository),
   new DeleteClientUseCase(clientRepository),
+  new UpdateClientStatusUseCase(clientRepository),
 );
 
 router.use(authMiddleware);
@@ -146,6 +149,45 @@ router.post('/', clientController.create);
  *         description: Cliente não encontrado
  */
 router.put('/:id', clientController.update);
+
+/**
+ * @swagger
+ * /api/clients/{id}/status:
+ *   patch:
+ *     summary: Alterar status do cliente (ATIVO, INATIVO, BLOQUEADO)
+ *     description: Clientes que não estão ATIVO têm a emissão de token negada pela Lambda de autenticação. Requer perfil ADMIN.
+ *     tags: [Clients]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [ATIVO, INATIVO, BLOQUEADO]
+ *                 example: INATIVO
+ *     responses:
+ *       200:
+ *         description: Status atualizado
+ *       403:
+ *         description: Perfil sem permissão
+ *       404:
+ *         description: Cliente não encontrado
+ *       422:
+ *         description: Status inválido
+ */
+router.patch('/:id/status', requireRole(UserRole.ADMIN), clientController.updateStatus);
 
 /**
  * @swagger
