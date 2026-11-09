@@ -27,6 +27,11 @@ const options: swaggerJSDoc.Options = {
           scheme: 'bearer',
           bearerFormat: 'JWT',
         },
+        internalApiKey: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'x-internal-api-key',
+        },
       },
     },
     tags: [
@@ -35,6 +40,7 @@ const options: swaggerJSDoc.Options = {
       { name: 'Vehicles', description: 'Gerenciamento de veículos' },
       { name: 'Parts', description: 'Gerenciamento de peças' },
       { name: 'Services', description: 'Gerenciamento de serviços' },
+      { name: 'Internal', description: 'Rotas serviço-a-serviço (x-internal-api-key)' },
       { name: 'Service Orders', description: 'Ordens de serviço' },
     ],
   },
