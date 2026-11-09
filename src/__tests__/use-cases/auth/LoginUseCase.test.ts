@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { LoginUseCase } from '../../../application/use-cases/auth/LoginUseCase';
 import { IUserRepository } from '../../../domain/repositories/IUserRepository';
 import { User } from '../../../domain/entities/User';
@@ -43,6 +44,21 @@ describe('LoginUseCase', () => {
     expect(typeof result.token).toBe('string');
     expect(result.user.email).toBe('admin@oficina.com');
     expect(result.user.role).toBe(UserRole.ADMIN);
+  });
+
+  it('deve emitir token com issuer e audience aceitos pelo authorizer do API Gateway', async () => {
+    mockUserRepo.findByEmail.mockResolvedValue(await makeUser());
+
+    const { token } = await new LoginUseCase(mockUserRepo, JWT_SECRET, JWT_EXPIRES_IN).execute({
+      email: 'admin@oficina.com',
+      password: 'senha123',
+    });
+
+    const claims = jwt.verify(token, JWT_SECRET, {
+      issuer: 'oficina-marimb0ndo-os',
+      audience: 'oficina-marimb0ndo-api',
+    }) as jwt.JwtPayload;
+    expect(claims).toMatchObject({ sub: 'user-1', role: UserRole.ADMIN, type: 'staff' });
   });
 
   it('deve lançar erro quando usuário não existe', async () => {
