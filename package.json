@@ -21,6 +21,7 @@
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
+    "amqplib": "^0.10.9",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -40,6 +41,7 @@
     "uuid": "^10.0.0"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.8",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",

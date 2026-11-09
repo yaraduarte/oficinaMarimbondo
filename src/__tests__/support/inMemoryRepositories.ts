@@ -9,13 +9,15 @@ import { Part } from '../../domain/entities/Part';
 import { Service } from '../../domain/entities/Service';
 import { ServiceOrder } from '../../domain/entities/ServiceOrder';
 import { User } from '../../domain/entities/User';
-import { ServiceOrderStatus } from '../../domain/enums/ServiceOrderStatus';
+import { INACTIVE_STATUSES } from '../../domain/enums/ServiceOrderStatus';
 import { IClientRepository, ListClientsOptions, PaginatedResult } from '../../domain/repositories/IClientRepository';
 import { IVehicleRepository } from '../../domain/repositories/IVehicleRepository';
 import { IPartRepository } from '../../domain/repositories/IPartRepository';
 import { IServiceRepository } from '../../domain/repositories/IServiceRepository';
 import { IServiceOrderRepository } from '../../domain/repositories/IServiceOrderRepository';
 import { IUserRepository } from '../../domain/repositories/IUserRepository';
+import { ServiceOrderSaga, SagaStatus } from '../../domain/saga/ServiceOrderSaga';
+import { ISagaUnitOfWork, OutgoingMessage, SagaTransactionContext } from '../../application/saga/ports';
 
 export const db = {
   clients: new Map<string, Client>(),
@@ -24,10 +26,16 @@ export const db = {
   services: new Map<string, Service>(),
   orders: new Map<string, ServiceOrder>(),
   users: new Map<string, User>(),
+  sagas: new Map<string, ServiceOrderSaga>(),
+  processed: new Map<string, string>(),
 };
+
+/** Mensagens gravadas no outbox (em ordem). */
+export const outbox: OutgoingMessage[] = [];
 
 export function resetDb(): void {
   Object.values(db).forEach((m) => m.clear());
+  outbox.length = 0;
 }
 
 export class InMemoryClientRepository implements IClientRepository {
@@ -146,9 +154,8 @@ export class InMemoryServiceOrderRepository implements IServiceOrderRepository {
     return [...db.orders.values()].filter((o) => !o.deletedAt);
   }
   async findActiveOrdered() {
-    const done = [ServiceOrderStatus.FINALIZADA, ServiceOrderStatus.ENTREGUE];
     return (await this.findAll())
-      .filter((o) => !done.includes(o.status))
+      .filter((o) => !INACTIVE_STATUSES.includes(o.status))
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   }
   async getNextOrderNumber() {
@@ -178,5 +185,63 @@ export class InMemoryUserRepository implements IUserRepository {
   async save(user: User) {
     db.users.set(user.id, user);
     return user;
+  }
+}
+
+/**
+ * Unidade de trabalho em memória: aplica as gravações só se o trabalho terminar sem erro,
+ * imitando o rollback da transação do PostgreSQL.
+ */
+export class InMemorySagaUnitOfWork implements ISagaUnitOfWork {
+  constructor(_dataSource?: unknown) {}
+
+  async run<T>(work: (ctx: SagaTransactionContext) => Promise<T>): Promise<T> {
+    const sagaWrites = new Map<string, ServiceOrderSaga>();
+    const orderWrites = new Map<string, ServiceOrder>();
+    const outboxWrites: OutgoingMessage[] = [];
+    const processedWrites = new Map<string, string>();
+    const clone = (s: ServiceOrderSaga) =>
+      new ServiceOrderSaga({ ...s, history: [...s.history], pendingCompensations: [...s.pendingCompensations] });
+
+    const ctx: SagaTransactionContext = {
+      sagas: {
+        findById: async (id) => {
+          const s = sagaWrites.get(id) ?? db.sagas.get(id);
+          return s ? clone(s) : null;
+        },
+        findByServiceOrderId: async (osId) => {
+          const s = [...sagaWrites.values(), ...db.sagas.values()].find((x) => x.serviceOrderId === osId);
+          return s ? clone(s) : null;
+        },
+        findExpiredAwaitingApproval: async (now) =>
+          [...db.sagas.values()]
+            .filter((s) => s.status === SagaStatus.AGUARDANDO_APROVACAO && s.approvalDeadline && s.approvalDeadline <= now)
+            .map(clone),
+        save: async (saga) => {
+          sagaWrites.set(saga.id, clone(saga));
+          return saga;
+        },
+      },
+      orders: {
+        ...new InMemoryServiceOrderRepository(),
+        findById: async (id) => orderWrites.get(id) ?? (await new InMemoryServiceOrderRepository().findById(id)),
+        update: async (order) => {
+          orderWrites.set(order.id, order);
+          return order;
+        },
+      } as InMemoryServiceOrderRepository,
+      outbox: { enqueue: async (m) => void outboxWrites.push(m) },
+      inbox: {
+        has: async (id) => processedWrites.has(id) || db.processed.has(id),
+        mark: async (id, type) => void processedWrites.set(id, type),
+      },
+    };
+
+    const result = await work(ctx);
+    sagaWrites.forEach((s, id) => db.sagas.set(id, s));
+    orderWrites.forEach((o, id) => db.orders.set(id, o));
+    outbox.push(...outboxWrites);
+    processedWrites.forEach((v, id) => db.processed.set(id, v));
+    return result;
   }
 }

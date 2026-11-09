@@ -1,8 +1,8 @@
-import { DataSource, Not, In, Repository } from 'typeorm';
+import { DataSource, EntityManager, Not, In, Repository } from 'typeorm';
 import { ServiceOrderEntity } from '../entities/ServiceOrderEntity';
 import { IServiceOrderRepository } from '../../../domain/repositories/IServiceOrderRepository';
 import { ServiceOrder } from '../../../domain/entities/ServiceOrder';
-import { ServiceOrderStatus } from '../../../domain/enums/ServiceOrderStatus';
+import { INACTIVE_STATUSES } from '../../../domain/enums/ServiceOrderStatus';
 
 function toDomain(entity: ServiceOrderEntity): ServiceOrder {
   return new ServiceOrder({
@@ -25,7 +25,7 @@ function toDomain(entity: ServiceOrderEntity): ServiceOrder {
 export class TypeORMServiceOrderRepository implements IServiceOrderRepository {
   private readonly repo: Repository<ServiceOrderEntity>;
 
-  constructor(dataSource: DataSource) {
+  constructor(dataSource: DataSource | EntityManager) {
     this.repo = dataSource.getRepository(ServiceOrderEntity);
   }
 
@@ -42,7 +42,7 @@ export class TypeORMServiceOrderRepository implements IServiceOrderRepository {
   async findActiveOrdered(): Promise<ServiceOrder[]> {
     const entities = await this.repo.find({
       where: {
-        status: Not(In([ServiceOrderStatus.FINALIZADA, ServiceOrderStatus.ENTREGUE])),
+        status: Not(In(INACTIVE_STATUSES)),
       },
       order: { createdAt: 'ASC' },
     });
