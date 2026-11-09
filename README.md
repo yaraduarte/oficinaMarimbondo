@@ -233,12 +233,21 @@ npm test -- CreateServiceOrderUseCase
 
 ### Cobertura de Testes
 
-- `CreateServiceOrderUseCase` — cálculo de orçamento, validações, estoque
-- `ListServiceOrdersUseCase` — ordenação por prioridade, exclusão de FINALIZADA/ENTREGUE
-- `ApproveQuoteUseCase` — aprovação/rejeição com notificação e-mail
-- `LoginUseCase` — autenticação JWT, credenciais inválidas
-- `CPF/CNPJ Validator` — casos válidos e inválidos
-- `ServiceOrder Status Transitions` — transições válidas e inválidas
+O Jest exige **mínimo de 80%** de statements, branches, funções e linhas (`coverageThreshold` em `jest.config.ts`), e o pipeline falha abaixo disso.
+
+| Métrica | Cobertura |
+|---------|-----------|
+| Statements | 98,6% |
+| Branches | 86,5% |
+| Funções | 100% |
+| Linhas | 99,1% |
+
+O relatório HTML de cada execução do CI fica no artefato `coverage` do workflow.
+
+Camadas de teste (135 testes):
+- **Unitários de domínio e casos de uso** (`src/__tests__/use-cases`): regras de OS, orçamento, status do cliente, autenticação
+- **API com supertest** (`src/__tests__/api`): o app Express real, com repositórios em memória (`src/__tests__/support`), cobrindo rotas, middlewares (JWT, perfil, `x-origin-verify`, `x-internal-api-key`), controllers e tratamento de erros
+- **Infraestrutura** (`src/__tests__/infrastructure`): repositórios TypeORM com `Repository` simulado e serviços de notificação (e-mail/WhatsApp)
 
 ## CI/CD e Fluxo de Branches
 
