@@ -1,10 +1,19 @@
 name: CI/CD Pipeline
 
+# Fluxo de branches:
+#   feature/*  --PR-->  homolog  (deploy automático em HOMOLOGAÇÃO, namespace oficina-hml)
+#   homolog    --PR-->  main     (deploy automático em PRODUÇÃO, namespace oficina-marimb0ndo)
+# main e homolog são protegidas: só aceitam merge via PR com os checks verdes.
+
 on:
   push:
-    branches: [main]
+    branches: [main, homolog]
   pull_request:
-    branches: [main]
+    branches: [main, homolog]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   DOCKER_IMAGE: yaraduarte/oficina-marimb0ndo-api
@@ -27,6 +36,9 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      - name: Build TypeScript
+        run: npm run build
+
       - name: Executar testes
         run: npm test
 
@@ -41,11 +53,25 @@ jobs:
     name: Build e Push Docker
     runs-on: ubuntu-latest
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push'
+
+    outputs:
+      image: ${{ steps.tag.outputs.image }}
 
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
+
+      - name: Definir tags da imagem
+        id: tag
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "image=${DOCKER_IMAGE}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+            echo "tags=${DOCKER_IMAGE}:latest,${DOCKER_IMAGE}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          else
+            echo "image=${DOCKER_IMAGE}:hml-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+            echo "tags=${DOCKER_IMAGE}:hml-latest,${DOCKER_IMAGE}:hml-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Login no Docker Hub
         uses: docker/login-action@v3
@@ -58,26 +84,63 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ${{ env.DOCKER_IMAGE }}:latest
-            ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+          tags: ${{ steps.tag.outputs.tags }}
 
-  deploy:
-    name: Deploy no k3s (EC2)
+  deploy-homolog:
+    name: Deploy Homologação (k3s / oficina-hml)
     runs-on: ubuntu-latest
     needs: build-and-push
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/homolog'
+    environment:
+      name: homolog
 
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Copiar manifesto e script para a EC2
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.K3S_HOST }}
           username: ec2-user
           key: ${{ secrets.K3S_SSH_PRIVATE_KEY }}
+          source: "k8s/hml/app.yaml,scripts/deploy-hml.sh"
+          target: /tmp/oficina-hml
+
+      - name: Aplicar no namespace oficina-hml
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          IMAGE: ${{ needs.build-and-push.outputs.image }}
+          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+        with:
+          host: ${{ secrets.K3S_HOST }}
+          username: ec2-user
+          key: ${{ secrets.K3S_SSH_PRIVATE_KEY }}
+          envs: IMAGE,NEW_RELIC_LICENSE_KEY
+          script: |
+            bash /tmp/oficina-hml/scripts/deploy-hml.sh "$IMAGE" /tmp/oficina-hml/k8s/hml/app.yaml
+
+  deploy-production:
+    name: Deploy Produção (k3s / oficina-marimb0ndo)
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: production
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          IMAGE: ${{ needs.build-and-push.outputs.image }}
+        with:
+          host: ${{ secrets.K3S_HOST }}
+          username: ec2-user
+          key: ${{ secrets.K3S_SSH_PRIVATE_KEY }}
+          envs: IMAGE
           script: |
             sudo kubectl set image deployment/oficina-api \
-              oficina-api=yaraduarte/oficina-marimb0ndo-api:latest \
+              oficina-api="$IMAGE" \
               -n oficina-marimb0ndo
             sudo kubectl rollout status deployment/oficina-api \
-              -n oficina-marimb0ndo --timeout=120s
+              -n oficina-marimb0ndo --timeout=180s
