@@ -43,4 +43,11 @@ describe('originVerifyMiddleware', () => {
     originVerifyMiddleware(req('/health'), {} as Response, next);
     expect(next).toHaveBeenCalled();
   });
+
+  it('libera /internal/* (protegidas por x-internal-api-key, chamadas pela Lambda)', () => {
+    process.env.ORIGIN_VERIFY_SECRET = 'gw-secret';
+    const next = jest.fn();
+    originVerifyMiddleware(req('/internal/clients/by-cpf/11144477735'), {} as Response, next);
+    expect(next).toHaveBeenCalled();
+  });
 });

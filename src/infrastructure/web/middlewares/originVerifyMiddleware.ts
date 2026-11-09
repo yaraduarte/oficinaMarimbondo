@@ -8,6 +8,12 @@ export const ORIGIN_VERIFY_HEADER = 'x-origin-verify';
 const EXEMPT_PATHS = new Set(['/health']);
 
 /**
+ * Rotas serviço-a-serviço: não são publicadas no Gateway e têm proteção própria
+ * (x-internal-api-key, ver internalApiKeyMiddleware).
+ */
+const INTERNAL_PREFIX = '/internal/';
+
+/**
  * Garante que a requisição veio do API Gateway: o Gateway injeta o header
  * x-origin-verify com um segredo compartilhado, e chamadas diretas ao IP da EC2 são recusadas.
  *
@@ -15,7 +21,7 @@ const EXEMPT_PATHS = new Set(['/health']);
  */
 export function originVerifyMiddleware(req: Request, _res: Response, next: NextFunction): void {
   const expected = process.env.ORIGIN_VERIFY_SECRET;
-  if (!expected || EXEMPT_PATHS.has(req.path)) {
+  if (!expected || EXEMPT_PATHS.has(req.path) || req.path.startsWith(INTERNAL_PREFIX)) {
     next();
     return;
   }
