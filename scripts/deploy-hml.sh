@@ -16,6 +16,8 @@ DB_HOST=$($K get configmap oficina-config -n "$PROD_NS" -o jsonpath='{.data.DB_H
 DB_USER=$($K get configmap oficina-config -n "$PROD_NS" -o jsonpath='{.data.DB_USER}')
 DB_PASS=$($K get secret oficina-secret -n "$PROD_NS" -o jsonpath='{.data.DB_PASS}' | base64 -d)
 JWT_SECRET=$($K get secret oficina-secret -n "$PROD_NS" -o jsonpath='{.data.JWT_SECRET}' | base64 -d)
+# Opcional: chave das rotas /internal/* (Lambda de auth). Homologação não fica atrás do Gateway, então ORIGIN_VERIFY_SECRET não é definida.
+INTERNAL_API_KEY=$($K get secret oficina-secret -n "$PROD_NS" -o jsonpath='{.data.INTERNAL_API_KEY}' | base64 -d || true)
 
 # 1. Namespace + Deployment + Service (imagem fixada pelo SHA do commit)
 sed "s|__IMAGE__|${IMAGE}|" "$MANIFEST" | $K apply -f -

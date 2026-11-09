@@ -1,4 +1,4 @@
-terraform {
+﻿terraform {
   required_providers {
     kind = {
       source  = "tehcyx/kind"
@@ -7,6 +7,10 @@ terraform {
     kubernetes = {
       source  = "hashicorp/kubernetes"
       version = "~> 2.30"
+    }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.11"
     }
   }
   required_version = ">= 1.5"
@@ -22,7 +26,8 @@ provider "kubernetes" {
 }
 
 resource "kind_cluster" "oficina" {
-  name = var.cluster_name
+  name           = var.cluster_name
+  wait_for_ready = true
 
   kind_config {
     kind        = "Cluster"
@@ -43,8 +48,14 @@ resource "kind_cluster" "oficina" {
   }
 }
 
+# Aguarda 20s apos o cluster estar pronto para garantir que o API server aceita conexoes
+resource "time_sleep" "wait_for_api" {
+  depends_on      = [kind_cluster.oficina]
+  create_duration = "20s"
+}
+
 resource "kubernetes_namespace" "oficina" {
-  depends_on = [kind_cluster.oficina]
+  depends_on = [time_sleep.wait_for_api]
 
   metadata {
     name = "oficina-marimb0ndo"
@@ -63,16 +74,16 @@ resource "kubernetes_config_map" "oficina_config" {
   }
 
   data = {
-    NODE_ENV      = "production"
-    PORT          = "3000"
-    DB_HOST       = "postgres-service"
-    DB_PORT       = "5432"
-    DB_NAME       = "oficina_db"
-    DB_USER       = "postgres"
+    NODE_ENV       = "production"
+    PORT           = "3000"
+    DB_HOST        = "postgres-service"
+    DB_PORT        = "5432"
+    DB_NAME        = "oficina_db"
+    DB_USER        = "postgres"
     JWT_EXPIRES_IN = "24h"
-    SMTP_HOST     = "smtp.ethereal.email"
-    SMTP_PORT     = "587"
-    SMTP_FROM     = "noreply@oficina.com"
+    SMTP_HOST      = "smtp.ethereal.email"
+    SMTP_PORT      = "587"
+    SMTP_FROM      = "noreply@oficina.com"
   }
 }
 

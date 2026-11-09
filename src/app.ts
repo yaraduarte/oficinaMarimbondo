@@ -7,6 +7,7 @@ import swaggerUi from 'swagger-ui-express';
 
 import { swaggerSpec } from './infrastructure/web/swagger/swaggerConfig';
 import { errorHandler } from './infrastructure/web/middlewares/errorHandler';
+import { originVerifyMiddleware } from './infrastructure/web/middlewares/originVerifyMiddleware';
 
 import authRoutes from './infrastructure/web/routes/auth.routes';
 import clientRoutes from './infrastructure/web/routes/client.routes';
@@ -22,6 +23,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Só aceita tráfego vindo do API Gateway (header x-origin-verify); /health fica liberado para as probes
+app.use(originVerifyMiddleware);
 
 // Swagger docs (sem helmet para não bloquear assets/fetch do Swagger UI)
 app.use(
