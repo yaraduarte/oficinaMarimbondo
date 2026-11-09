@@ -2,10 +2,7 @@
   "permissions": {
     "allow": [
       "PowerShell(if \\(-not $?\\) { \"Diret�rio vazio ou n�o existe\" })",
-      "Bash(xargs wc -l)",
-      "PowerShell(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\Administrador\\\\oficinaMarimbondo_fiap\\\\.github\\\\workflows\")",
-      "Skill(artifact-design)",
-      "Skill(artifact-design:*)"
+      "Bash(xargs wc -l)"
     ]
   }
 }
