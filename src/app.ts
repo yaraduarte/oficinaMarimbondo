@@ -15,6 +15,7 @@ import vehicleRoutes from './infrastructure/web/routes/vehicle.routes';
 import partRoutes from './infrastructure/web/routes/part.routes';
 import serviceRoutes from './infrastructure/web/routes/service.routes';
 import serviceOrderRoutes from './infrastructure/web/routes/serviceOrder.routes';
+import internalRoutes from './infrastructure/web/routes/internal.routes';
 
 const app = express();
 
@@ -56,6 +57,9 @@ app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/parts', partRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/service-orders', serviceOrderRoutes);
+
+// Rotas serviço-a-serviço (protegidas por x-internal-api-key, fora do API Gateway público)
+app.use('/internal', internalRoutes);
 
 // Global error handler (must be last)
 app.use(errorHandler);

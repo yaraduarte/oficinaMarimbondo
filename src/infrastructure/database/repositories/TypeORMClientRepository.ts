@@ -16,6 +16,7 @@ function toDomain(entity: ClientEntity): Client {
     cpfCnpj: entity.cpfCnpj,
     email: entity.email,
     phone: entity.phone,
+    status: entity.status,
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
     deletedAt: entity.deletedAt ?? null,
