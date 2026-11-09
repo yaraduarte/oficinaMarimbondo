@@ -240,6 +240,30 @@ npm test -- CreateServiceOrderUseCase
 - `CPF/CNPJ Validator` — casos válidos e inválidos
 - `ServiceOrder Status Transitions` — transições válidas e inválidas
 
+## CI/CD e Fluxo de Branches
+
+Pipeline em `.github/workflows/ci-cd.yml`.
+
+```
+feature/*  ──PR──►  homolog  ──PR──►  main
+                      │                 │
+                      ▼                 ▼
+         k3s / namespace oficina-hml    k3s / namespace oficina-marimb0ndo
+         NodePort 30081                 NodePort 30080
+         imagem :hml-<sha>              imagem :<sha> (+ :latest)
+         database oficina_db_hml        database oficina_db
+```
+
+| Evento | Jobs |
+|--------|------|
+| Pull Request para `homolog` ou `main` | `Testes` (build TypeScript + Jest com cobertura) |
+| Push (merge) em `homolog` | Testes → Build/Push Docker → **Deploy Homologação** (`scripts/deploy-hml.sh` + `k8s/hml/app.yaml`) |
+| Push (merge) em `main` | Testes → Build/Push Docker → **Deploy Produção** (`kubectl set image` + `rollout status`) |
+
+- `main` e `homolog` são **protegidas**: push direto bloqueado (inclusive para admin), merge apenas via PR com o check `Testes` verde e conversas resolvidas.
+- Os deploys usam os environments `homolog` e `production` do GitHub, que guardam o histórico de cada implantação.
+- A homologação roda no mesmo cluster k3s da produção, isolada em namespace próprio e com database próprio no RDS, sem custo de infraestrutura adicional.
+
 ## Regras de Negócio Importantes
 
 ### Ordenação das OS ativas
