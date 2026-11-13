@@ -237,17 +237,47 @@ O Jest exige **mínimo de 80%** de statements, branches, funções e linhas (`co
 
 | Métrica | Cobertura |
 |---------|-----------|
-| Statements | 98,6% |
-| Branches | 86,5% |
-| Funções | 100% |
+| Statements | 98,5% |
+| Branches | 89,4% |
+| Funções | 98,0% |
 | Linhas | 99,1% |
 
 O relatório HTML de cada execução do CI fica no artefato `coverage` do workflow.
 
-Camadas de teste (135 testes):
+Camadas de teste (210 testes):
 - **Unitários de domínio e casos de uso** (`src/__tests__/use-cases`): regras de OS, orçamento, status do cliente, autenticação
 - **API com supertest** (`src/__tests__/api`): o app Express real, com repositórios em memória (`src/__tests__/support`), cobrindo rotas, middlewares (JWT, perfil, `x-origin-verify`, `x-internal-api-key`), controllers e tratamento de erros
+- **Saga** (`src/__tests__/saga`): máquina de estados (caminho feliz, compensações, reentregas), orquestrador (transação, idempotência, timeouts), consumidor RabbitMQ (retry/DLQ), relay do outbox e persistência
+- **BDD** (`src/__tests__/bdd`, jest-cucumber, Gherkin em português): fluxo completo da OS pelos três serviços, falta de estoque com estorno e cancelamento, e evento reentregue processado uma única vez
 - **Infraestrutura** (`src/__tests__/infrastructure`): repositórios TypeORM com `Repository` simulado e serviços de notificação (e-mail/WhatsApp)
+
+## Saga orquestrada (Fase 4)
+
+O os-service é o **orquestrador** da Saga da OS (ver [ADR-005](docs/ADR-005-saga-orquestrada.md), [arquitetura](docs/fase4/ARQUITETURA.md) e [contratos](docs/fase4/EVENTOS.md)).
+
+```
+POST /api/service-orders ──► OS RECEBIDA + saga AGUARDANDO_ORCAMENTO ──► cmd billing.GerarOrcamento
+billing.OrcamentoGerado      ──► OS AGUARDANDO_APROVACAO
+billing.OrcamentoAprovado    ──► OS AGUARDANDO_PAGAMENTO
+billing.PagamentoConfirmado  ──► OS EM_FILA ──► cmd execution.IniciarExecucao
+execution.DiagnosticoIniciado / ReparoIniciado ──► OS EM_DIAGNOSTICO / EM_EXECUCAO
+execution.ExecucaoFinalizada ──► OS FINALIZADA, saga CONCLUIDA
+
+Falhas: recusa/timeout do orçamento, pagamento recusado, estoque insuficiente ou falha no reparo
+  ──► OS CANCELADA ──► compensações em ordem (EstornarPagamento → CancelarOrcamento) ──► saga COMPENSADA
+```
+
+| Peça | Onde |
+|------|------|
+| Máquina de estados (pura, sem I/O) | `src/domain/saga/ServiceOrderSaga.ts` |
+| Orquestrador: saga + OS + outbox + inbox na mesma transação | `src/application/saga/SagaOrchestrator.ts` |
+| Tabelas `saga_instances`, `outbox_messages`, `processed_messages` | `src/infrastructure/database/entities` |
+| Relay do outbox (FOR UPDATE SKIP LOCKED, seguro com várias réplicas) | `src/infrastructure/messaging/OutboxRelay.ts` |
+| Consumidor `os.saga.events` (3 tentativas e depois DLQ) | `src/infrastructure/messaging/SagaEventConsumer.ts` |
+| Trace distribuído via headers AMQP (New Relic) | `src/infrastructure/observability/tracing.ts` |
+
+- `GET /api/service-orders/:id/saga` mostra a etapa atual, as compensações pendentes e o histórico.
+- Localmente, `docker compose up` sobe o RabbitMQ (painel em http://localhost:15672). Sem `RABBITMQ_URL`, os comandos ficam gravados no outbox até o broker existir.
 
 ## CI/CD e Fluxo de Branches
 

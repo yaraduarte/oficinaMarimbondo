@@ -13,6 +13,7 @@ import { TypeORMVehicleRepository } from '../../database/repositories/TypeORMVeh
 import { NotificationService } from '../../notification/NotificationService';
 import { AppDataSource } from '../../database/data-source';
 import { authMiddleware } from '../middlewares/authMiddleware';
+import { getSagaOrchestrator } from '../../saga/container';
 
 const router = Router();
 
@@ -35,6 +36,7 @@ const serviceOrderController = new ServiceOrderController(
   new ListServiceOrdersUseCase(serviceOrderRepository),
   new ApproveQuoteUseCase(serviceOrderRepository, clientRepository, notificationService),
   new UpdateServiceOrderStatusUseCase(serviceOrderRepository, clientRepository, notificationService),
+  getSagaOrchestrator(),
 );
 
 /**
@@ -213,5 +215,28 @@ router.post('/', serviceOrderController.create);
  *         description: Transição de status inválida
  */
 router.patch('/:id/status', serviceOrderController.updateStatus);
+
+/**
+ * @swagger
+ * /api/service-orders/{id}/saga:
+ *   get:
+ *     summary: Estado da Saga da OS (etapa atual, compensações pendentes e histórico)
+ *     description: A Saga orquestrada coordena orçamento (billing-service), pagamento e execução (execution-service). Ver docs/fase4/ARQUITETURA.md.
+ *     tags: [Service Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Saga encontrada
+ *       404:
+ *         description: OS sem saga
+ */
+router.get('/:id/saga', serviceOrderController.getSaga);
 
 export default router;

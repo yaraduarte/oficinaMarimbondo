@@ -6,7 +6,9 @@
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import app from '../../app';
-import { db, resetDb } from '../support/inMemoryRepositories';
+import { db, outbox, resetDb } from '../support/inMemoryRepositories';
+import { SagaOrchestrator } from '../../application/saga/SagaOrchestrator';
+import { SagaStatus } from '../../domain/saga/ServiceOrderSaga';
 import { Client } from '../../domain/entities/Client';
 import { ClientStatus } from '../../domain/enums/ClientStatus';
 import { UserRole } from '../../domain/enums/UserRole';
@@ -30,6 +32,9 @@ jest.mock('../../infrastructure/database/repositories/TypeORMServiceOrderReposit
 }));
 jest.mock('../../infrastructure/database/repositories/TypeORMUserRepository', () => ({
   TypeORMUserRepository: jest.requireActual('../support/inMemoryRepositories').InMemoryUserRepository,
+}));
+jest.mock('../../infrastructure/database/repositories/TypeORMSagaPersistence', () => ({
+  TypeORMSagaUnitOfWork: jest.requireActual('../support/inMemoryRepositories').InMemorySagaUnitOfWork,
 }));
 jest.mock('../../infrastructure/notification/NotificationService', () => ({
   NotificationService: jest.fn().mockImplementation(() => ({ sendStatusUpdate: jest.fn().mockResolvedValue(undefined) })),
@@ -280,6 +285,13 @@ describe('/api/service-orders', () => {
     const { res } = await openOrder();
     expect(res.status).toBe(201);
     expect(res.body.data).toMatchObject({ status: ServiceOrderStatus.RECEBIDA, budget: 250 });
+    expect(res.body.saga).toMatchObject({ status: SagaStatus.AGUARDANDO_ORCAMENTO });
+    expect(outbox.map((m) => m.envelope.type)).toEqual(['billing.GerarOrcamento']);
+
+    const saga = await request(app).get(`/api/service-orders/${res.body.data.id}/saga`).set(auth());
+    expect(saga.status).toBe(200);
+    expect(saga.body.data).toMatchObject({ id: res.body.saga.id, serviceOrderId: res.body.data.id });
+    expect((await request(app).get('/api/service-orders/x/saga').set(auth())).status).toBe(404);
 
     const status = await request(app).get(`/api/service-orders/${res.body.data.id}/status`);
     expect(status.status).toBe(200);
@@ -322,6 +334,16 @@ describe('/api/service-orders', () => {
     const noStock = await open({ vehicleId: own.id, parts: [{ partId: p.id, quantity: 5 }] });
     expect(noStock.status).toBe(422);
     expect(noStock.body.message).toBe('Estoque insuficiente para a peça: Vela');
+  });
+
+  it('grava a OS mesmo se a saga não puder ser iniciada', async () => {
+    const spy = jest.spyOn(SagaOrchestrator.prototype, 'start').mockRejectedValueOnce(new Error('banco fora'));
+    const err = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const { res } = await openOrder();
+    spy.mockRestore();
+    err.mockRestore();
+    expect(res.status).toBe(201);
+    expect(res.body.saga).toBeNull();
   });
 
   it('recusa transição inválida e OS inexistente', async () => {
