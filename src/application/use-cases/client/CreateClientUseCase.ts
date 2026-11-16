@@ -4,6 +4,7 @@ import { Client } from '../../../domain/entities/Client';
 import { CreateClientDTO } from '../../dtos/ClientDTOs';
 import { validateCpfCnpj } from '../../../shared/validators/cpfCnpjValidator';
 import { AppError } from '../../../shared/errors/AppError';
+import { ClientStatus } from '../../../domain/enums/ClientStatus';
 
 export class CreateClientUseCase {
   constructor(private readonly clientRepository: IClientRepository) {}
@@ -31,6 +32,7 @@ export class CreateClientUseCase {
       cpfCnpj: cpfCnpjCleaned,
       email: dto.email.toLowerCase(),
       phone: dto.phone,
+      status: ClientStatus.ATIVO,
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,

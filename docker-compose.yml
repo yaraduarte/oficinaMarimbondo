@@ -15,8 +15,11 @@ services:
       JWT_EXPIRES_IN: 24h
       SMTP_HOST: smtp.ethereal.email
       SMTP_PORT: 587
+      RABBITMQ_URL: amqp://oficina:oficina123@rabbitmq:5672
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - oficina-net
@@ -39,8 +42,28 @@ services:
     networks:
       - oficina-net
 
+  # Mensageria da Saga (ADR-006). Painel: http://localhost:15672 (oficina / oficina123)
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: oficina
+      RABBITMQ_DEFAULT_PASS: oficina123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - oficina-net
+
 volumes:
   postgres_data:
+  rabbitmq_data:
 
 networks:
   oficina-net:

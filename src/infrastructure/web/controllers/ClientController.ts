@@ -4,6 +4,7 @@ import { GetClientUseCase } from '../../../application/use-cases/client/GetClien
 import { ListClientsUseCase } from '../../../application/use-cases/client/ListClientsUseCase';
 import { UpdateClientUseCase } from '../../../application/use-cases/client/UpdateClientUseCase';
 import { DeleteClientUseCase } from '../../../application/use-cases/client/DeleteClientUseCase';
+import { UpdateClientStatusUseCase } from '../../../application/use-cases/client/UpdateClientStatusUseCase';
 
 export class ClientController {
   constructor(
@@ -12,6 +13,7 @@ export class ClientController {
     private readonly listClientsUseCase: ListClientsUseCase,
     private readonly updateClientUseCase: UpdateClientUseCase,
     private readonly deleteClientUseCase: DeleteClientUseCase,
+    private readonly updateClientStatusUseCase: UpdateClientStatusUseCase,
   ) {}
 
   create = async (req: Request, res: Response): Promise<void> => {
@@ -36,6 +38,11 @@ export class ClientController {
 
   update = async (req: Request, res: Response): Promise<void> => {
     const result = await this.updateClientUseCase.execute(req.params.id as string, req.body);
+    res.status(200).json({ status: 'success', data: result });
+  };
+
+  updateStatus = async (req: Request, res: Response): Promise<void> => {
+    const result = await this.updateClientStatusUseCase.execute(req.params.id as string, req.body);
     res.status(200).json({ status: 'success', data: result });
   };
 

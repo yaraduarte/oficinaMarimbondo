@@ -1,4 +1,4 @@
-import { validateCpfCnpj } from '../../shared/validators/cpfCnpjValidator';
+import { validateCpfCnpj, formatCpfCnpj } from '../../shared/validators/cpfCnpjValidator';
 
 describe('validateCpfCnpj', () => {
   describe('CPF válidos', () => {
@@ -65,5 +65,19 @@ describe('validateCpfCnpj', () => {
     it('deve rejeitar string com apenas letras', () => {
       expect(validateCpfCnpj('abc.def.ghi-jk')).toBe(false);
     });
+  });
+});
+
+describe('formatCpfCnpj', () => {
+  it('formata CPF', () => {
+    expect(formatCpfCnpj('11144477735')).toBe('111.444.777-35');
+  });
+
+  it('formata CNPJ', () => {
+    expect(formatCpfCnpj('11222333000181')).toBe('11.222.333/0001-81');
+  });
+
+  it('devolve o valor original quando não é CPF nem CNPJ', () => {
+    expect(formatCpfCnpj('123')).toBe('123');
   });
 });

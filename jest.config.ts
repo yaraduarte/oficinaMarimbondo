@@ -24,7 +24,12 @@ const config: Config = {
     '!src/**/*.d.ts',
     '!src/server.ts',
     '!src/infrastructure/database/migrations/**',
+    '!src/__tests__/**',
   ],
+  // Cobertura mínima exigida pelo Tech Challenge (o CI falha abaixo disso)
+  coverageThreshold: {
+    global: { statements: 80, branches: 80, functions: 80, lines: 80 },
+  },
   coverageDirectory: 'coverage',
   coverageReporters: ['lcov', 'text', 'json-summary'],
   reporters: ['default', ['jest-sonar', { outputDirectory: 'coverage', outputName: 'test-report.xml' }]],

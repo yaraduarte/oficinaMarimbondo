@@ -10,18 +10,24 @@ const STATUS_LABELS: Record<ServiceOrderStatus, string> = {
   [ServiceOrderStatus.RECEBIDA]: 'Recebida',
   [ServiceOrderStatus.EM_DIAGNOSTICO]: 'Em Diagnóstico',
   [ServiceOrderStatus.AGUARDANDO_APROVACAO]: 'Aguardando Aprovação',
+  [ServiceOrderStatus.AGUARDANDO_PAGAMENTO]: 'Aguardando Pagamento',
+  [ServiceOrderStatus.EM_FILA]: 'Na Fila de Execução',
   [ServiceOrderStatus.EM_EXECUCAO]: 'Em Execução',
   [ServiceOrderStatus.FINALIZADA]: 'Finalizada',
   [ServiceOrderStatus.ENTREGUE]: 'Entregue',
+  [ServiceOrderStatus.CANCELADA]: 'Cancelada',
 };
 
 const STATUS_MESSAGES: Record<ServiceOrderStatus, string> = {
   [ServiceOrderStatus.RECEBIDA]: 'Sua ordem de serviço foi recebida e será analisada em breve.',
   [ServiceOrderStatus.EM_DIAGNOSTICO]: 'Nossos mecânicos estão realizando o diagnóstico do seu veículo.',
   [ServiceOrderStatus.AGUARDANDO_APROVACAO]: 'O orçamento foi preparado e aguarda sua aprovação.',
+  [ServiceOrderStatus.AGUARDANDO_PAGAMENTO]: 'Orçamento aprovado! Aguardando a confirmação do pagamento.',
+  [ServiceOrderStatus.EM_FILA]: 'Pagamento confirmado. Seu veículo está na fila de execução.',
   [ServiceOrderStatus.EM_EXECUCAO]: 'Os serviços estão sendo executados no seu veículo.',
   [ServiceOrderStatus.FINALIZADA]: 'Os serviços foram concluídos. Seu veículo está pronto para retirada!',
   [ServiceOrderStatus.ENTREGUE]: 'Veículo entregue. Obrigado pela preferência!',
+  [ServiceOrderStatus.CANCELADA]: 'Sua ordem de serviço foi cancelada. Valores pagos, se houver, serão estornados.',
 };
 
 export class UpdateServiceOrderStatusUseCase {

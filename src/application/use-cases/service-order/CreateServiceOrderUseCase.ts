@@ -23,6 +23,9 @@ export class CreateServiceOrderUseCase {
     if (!client) {
       throw new AppError('Cliente não encontrado', 404);
     }
+    if (!client.isActive()) {
+      throw new AppError(`Cliente com status ${client.status} não pode abrir ordem de serviço`, 422);
+    }
 
     const vehicle = await this.vehicleRepository.findById(dto.vehicleId);
     if (!vehicle) {

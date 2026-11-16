@@ -7,6 +7,7 @@ import swaggerUi from 'swagger-ui-express';
 
 import { swaggerSpec } from './infrastructure/web/swagger/swaggerConfig';
 import { errorHandler } from './infrastructure/web/middlewares/errorHandler';
+import { originVerifyMiddleware } from './infrastructure/web/middlewares/originVerifyMiddleware';
 
 import authRoutes from './infrastructure/web/routes/auth.routes';
 import clientRoutes from './infrastructure/web/routes/client.routes';
@@ -14,6 +15,7 @@ import vehicleRoutes from './infrastructure/web/routes/vehicle.routes';
 import partRoutes from './infrastructure/web/routes/part.routes';
 import serviceRoutes from './infrastructure/web/routes/service.routes';
 import serviceOrderRoutes from './infrastructure/web/routes/serviceOrder.routes';
+import internalRoutes from './infrastructure/web/routes/internal.routes';
 
 const app = express();
 
@@ -21,6 +23,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Só aceita tráfego vindo do API Gateway (header x-origin-verify); /health fica liberado para as probes
+app.use(originVerifyMiddleware);
 
 // Swagger docs (sem helmet para não bloquear assets/fetch do Swagger UI)
 app.use(
@@ -52,6 +57,9 @@ app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/parts', partRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/service-orders', serviceOrderRoutes);
+
+// Rotas serviço-a-serviço (protegidas por x-internal-api-key, fora do API Gateway público)
+app.use('/internal', internalRoutes);
 
 // Global error handler (must be last)
 app.use(errorHandler);

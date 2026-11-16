@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import app from './app';
 import { AppDataSource } from './infrastructure/database/data-source';
+import { getSagaOrchestrator } from './infrastructure/saga/container';
+import { startSagaRuntime } from './infrastructure/saga/bootstrap';
 
 const PORT = process.env.PORT ?? 3000;
 const MAX_RETRIES = 10;
@@ -21,7 +23,13 @@ async function connectWithRetry(attempt = 1): Promise<void> {
   }
 }
 
-connectWithRetry().then(() => {
+connectWithRetry().then(async () => {
+  try {
+    await startSagaRuntime(AppDataSource, getSagaOrchestrator(), { rabbitUrl: process.env.RABBITMQ_URL });
+  } catch (err) {
+    console.error('[Saga] Falha ao iniciar a mensageria (a API segue no ar; mensagens ficam no outbox)', err);
+  }
+
   app.listen(PORT, () => {
     console.log(`[Server] Oficina Marimb0ndo API rodando na porta ${PORT}`);
     console.log(`[Server] Swagger disponível em http://localhost:${PORT}/api-docs`);

@@ -11,8 +11,9 @@ import { Part } from '../../../domain/entities/Part';
 import { Service } from '../../../domain/entities/Service';
 import { ServiceOrder } from '../../../domain/entities/ServiceOrder';
 import { AppError } from '../../../shared/errors/AppError';
+import { ClientStatus } from '../../../domain/enums/ClientStatus';
 
-const makeClient = (): Client =>
+const makeClient = (overrides: Partial<Client> = {}): Client =>
   new Client({
     id: 'client-1',
     name: 'João Silva',
@@ -22,6 +23,7 @@ const makeClient = (): Client =>
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
+    ...overrides,
   });
 
 const makeVehicle = (): Vehicle =>
@@ -143,6 +145,24 @@ describe('CreateServiceOrderUseCase', () => {
     expect(result.budget).toBe(450);
     expect(result.services).toHaveLength(2);
     expect(result.parts).toHaveLength(1);
+  });
+
+  it('deve lançar 422 quando cliente não está ATIVO', async () => {
+    const { clientRepository, vehicleRepository, serviceRepository, partRepository, serviceOrderRepository } = makeMockRepos();
+    clientRepository.findById.mockResolvedValue(makeClient({ status: ClientStatus.BLOQUEADO }));
+
+    const useCase = new CreateServiceOrderUseCase(
+      serviceOrderRepository,
+      serviceRepository,
+      partRepository,
+      clientRepository,
+      vehicleRepository,
+    );
+
+    await expect(
+      useCase.execute({ clientId: 'client-1', vehicleId: 'vehicle-1', serviceIds: ['svc-1'], parts: [] }),
+    ).rejects.toThrow(new AppError('Cliente com status BLOQUEADO não pode abrir ordem de serviço', 422));
+    expect(vehicleRepository.findById).not.toHaveBeenCalled();
   });
 
   it('deve lançar erro quando cliente não encontrado', async () => {

@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
 } from 'typeorm';
+import { ClientStatus } from '../../../domain/enums/ClientStatus';
 
 @Entity('clients')
 export class ClientEntity {
@@ -23,6 +24,9 @@ export class ClientEntity {
 
   @Column({ length: 20 })
   phone: string;
+
+  @Column({ type: 'varchar', length: 20, default: ClientStatus.ATIVO })
+  status: ClientStatus;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
