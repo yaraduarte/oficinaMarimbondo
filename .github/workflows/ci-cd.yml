@@ -134,12 +134,24 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           IMAGE: ${{ env.DOCKER_IMAGE }}:${{ needs.build-and-push.outputs.tag }}
+          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
         with:
           host: ${{ secrets.K3S_HOST }}
           username: ec2-user
           key: ${{ secrets.K3S_SSH_PRIVATE_KEY }}
-          envs: IMAGE
+          envs: IMAGE,NEW_RELIC_LICENSE_KEY
           script: |
+            # New Relic: chave num Secret próprio, referenciada pelo deployment (criado pelo user_data da infra)
+            if [ -n "$NEW_RELIC_LICENSE_KEY" ]; then
+              sudo kubectl create secret generic oficina-newrelic -n oficina-marimb0ndo \
+                --from-literal=NEW_RELIC_LICENSE_KEY="$NEW_RELIC_LICENSE_KEY" \
+                --dry-run=client -o yaml | sudo kubectl apply -f -
+              if ! sudo kubectl get deployment oficina-api -n oficina-marimb0ndo \
+                  -o jsonpath='{.spec.template.spec.containers[0].env[*].name}' | tr ' ' '\n' | grep -qx NEW_RELIC_LICENSE_KEY; then
+                sudo kubectl patch deployment oficina-api -n oficina-marimb0ndo --type=json \
+                  -p='[{"op":"add","path":"/spec/template/spec/containers/0/env/-","value":{"name":"NEW_RELIC_LICENSE_KEY","valueFrom":{"secretKeyRef":{"name":"oficina-newrelic","key":"NEW_RELIC_LICENSE_KEY"}}}}]'
+              fi
+            fi
             sudo kubectl set image deployment/oficina-api \
               oficina-api="$IMAGE" \
               -n oficina-marimb0ndo
