@@ -1,0 +1,1328 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Oficina Marimb0ndo API",
+    "version": "1.0.0",
+    "description": "API REST para gerenciamento de oficina mecânica — FIAP Tech Challenge Phase 1 & 2",
+    "contact": {
+      "name": "Oficina Marimb0ndo",
+      "email": "contato@oficina.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Desenvolvimento"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "internalApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-internal-api-key"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Autenticação e registro"
+    },
+    {
+      "name": "Clients",
+      "description": "Gerenciamento de clientes"
+    },
+    {
+      "name": "Vehicles",
+      "description": "Gerenciamento de veículos"
+    },
+    {
+      "name": "Parts",
+      "description": "Gerenciamento de peças"
+    },
+    {
+      "name": "Services",
+      "description": "Gerenciamento de serviços"
+    },
+    {
+      "name": "Internal",
+      "description": "Rotas serviço-a-serviço (x-internal-api-key)"
+    },
+    {
+      "name": "Service Orders",
+      "description": "Ordens de serviço"
+    }
+  ],
+  "paths": {
+    "/api/vehicles": {
+      "get": {
+        "summary": "Listar veículos",
+        "tags": [
+          "Vehicles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "clientId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de veículos"
+          }
+        }
+      },
+      "post": {
+        "summary": "Cadastrar veículo",
+        "tags": [
+          "Vehicles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "plate",
+                  "brand",
+                  "model",
+                  "year",
+                  "clientId"
+                ],
+                "properties": {
+                  "plate": {
+                    "type": "string",
+                    "example": "ABC1D23"
+                  },
+                  "brand": {
+                    "type": "string",
+                    "example": "Fiat"
+                  },
+                  "model": {
+                    "type": "string",
+                    "example": "Uno"
+                  },
+                  "year": {
+                    "type": "integer",
+                    "example": 2021
+                  },
+                  "clientId": {
+                    "type": "string",
+                    "example": "cole-aqui-o-id-do-cliente"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Veículo cadastrado com sucesso"
+          },
+          "404": {
+            "description": "Cliente não encontrado"
+          },
+          "409": {
+            "description": "Placa já cadastrada"
+          },
+          "422": {
+            "description": "Placa inválida"
+          }
+        }
+      }
+    },
+    "/api/vehicles/{id}": {
+      "get": {
+        "summary": "Buscar veículo por ID",
+        "tags": [
+          "Vehicles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Veículo encontrado"
+          },
+          "404": {
+            "description": "Veículo não encontrado"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualizar veículo",
+        "tags": [
+          "Vehicles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "brand": {
+                    "type": "string"
+                  },
+                  "model": {
+                    "type": "string"
+                  },
+                  "year": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Veículo atualizado"
+          },
+          "404": {
+            "description": "Veículo não encontrado"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remover veículo",
+        "tags": [
+          "Vehicles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Veículo removido"
+          },
+          "404": {
+            "description": "Veículo não encontrado"
+          }
+        }
+      }
+    },
+    "/api/service-orders/{id}/status": {
+      "get": {
+        "summary": "Consultar status da OS (público)",
+        "tags": [
+          "Service Orders"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status atual da ordem de serviço"
+          },
+          "404": {
+            "description": "OS não encontrada"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Avançar status da OS",
+        "tags": [
+          "Service Orders"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "RECEBIDA",
+                      "EM_DIAGNOSTICO",
+                      "AGUARDANDO_APROVACAO",
+                      "EM_EXECUCAO",
+                      "FINALIZADA",
+                      "ENTREGUE"
+                    ],
+                    "example": "EM_DIAGNOSTICO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID da OS retornado no POST de criação"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status atualizado — notificação enviada por e-mail e WhatsApp"
+          },
+          "404": {
+            "description": "OS não encontrada"
+          },
+          "422": {
+            "description": "Transição de status inválida"
+          }
+        }
+      }
+    },
+    "/api/service-orders/{id}/approve": {
+      "post": {
+        "summary": "Aprovar ou rejeitar orçamento (público)",
+        "tags": [
+          "Service Orders"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "decision"
+                ],
+                "properties": {
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "approved",
+                      "rejected"
+                    ],
+                    "example": "approved"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Decisão registrada com sucesso"
+          },
+          "404": {
+            "description": "OS não encontrada"
+          },
+          "422": {
+            "description": "OS não está aguardando aprovação"
+          }
+        }
+      }
+    },
+    "/api/service-orders": {
+      "get": {
+        "summary": "Listar ordens de serviço ativas (ordenadas por prioridade)",
+        "tags": [
+          "Service Orders"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de OS ativas — EM_EXECUCAO > AGUARDANDO_APROVACAO > EM_DIAGNOSTICO > RECEBIDA"
+          }
+        }
+      },
+      "post": {
+        "summary": "Criar ordem de serviço",
+        "tags": [
+          "Service Orders"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "clientId",
+                  "vehicleId",
+                  "serviceIds"
+                ],
+                "properties": {
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "vehicleId": {
+                    "type": "string"
+                  },
+                  "serviceIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "parts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "partId": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "notes": {
+                    "type": "string",
+                    "example": "Cliente relatou barulho no motor"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OS criada com sucesso — o campo `data.id` é o ID para usar nos próximos endpoints",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "ID da OS — use nos endpoints de status e aprovação"
+                        },
+                        "orderNumber": {
+                          "type": "string",
+                          "example": "OS-2026-001"
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "RECEBIDA"
+                        },
+                        "budget": {
+                          "type": "number",
+                          "example": 125.9
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cliente, veículo ou serviço não encontrado"
+          },
+          "422": {
+            "description": "Veículo não pertence ao cliente ou estoque insuficiente"
+          }
+        }
+      }
+    },
+    "/api/service-orders/{id}/saga": {
+      "get": {
+        "summary": "Estado da Saga da OS (etapa atual, compensações pendentes e histórico)",
+        "description": "A Saga orquestrada coordena orçamento (billing-service), pagamento e execução (execution-service). Ver docs/fase4/ARQUITETURA.md.",
+        "tags": [
+          "Service Orders"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Saga encontrada"
+          },
+          "404": {
+            "description": "OS sem saga"
+          }
+        }
+      }
+    },
+    "/api/services": {
+      "get": {
+        "summary": "Listar serviços",
+        "tags": [
+          "Services"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de serviços"
+          }
+        }
+      },
+      "post": {
+        "summary": "Cadastrar serviço",
+        "tags": [
+          "Services"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "price",
+                  "estimatedHours"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Troca de óleo"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Troca completa com filtro"
+                  },
+                  "price": {
+                    "type": "number",
+                    "example": 80
+                  },
+                  "estimatedHours": {
+                    "type": "number",
+                    "example": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Serviço cadastrado com sucesso"
+          },
+          "400": {
+            "description": "Dados inválidos"
+          }
+        }
+      }
+    },
+    "/api/services/{id}": {
+      "get": {
+        "summary": "Buscar serviço por ID",
+        "tags": [
+          "Services"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Serviço encontrado"
+          },
+          "404": {
+            "description": "Serviço não encontrado"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualizar serviço",
+        "tags": [
+          "Services"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "price": {
+                    "type": "number"
+                  },
+                  "estimatedHours": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Serviço atualizado"
+          },
+          "404": {
+            "description": "Serviço não encontrado"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remover serviço",
+        "tags": [
+          "Services"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Serviço removido"
+          },
+          "404": {
+            "description": "Serviço não encontrado"
+          }
+        }
+      }
+    },
+    "/api/parts": {
+      "get": {
+        "summary": "Listar peças",
+        "tags": [
+          "Parts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de peças com indicador de estoque baixo"
+          }
+        }
+      },
+      "post": {
+        "summary": "Cadastrar peça",
+        "tags": [
+          "Parts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "unitPrice",
+                  "stockQuantity",
+                  "minStockAlert"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Filtro de óleo"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Filtro Mann W712/75"
+                  },
+                  "unitPrice": {
+                    "type": "number",
+                    "example": 45.9
+                  },
+                  "stockQuantity": {
+                    "type": "integer",
+                    "example": 20
+                  },
+                  "minStockAlert": {
+                    "type": "integer",
+                    "example": 5
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Peça cadastrada com sucesso"
+          },
+          "400": {
+            "description": "Dados inválidos"
+          }
+        }
+      }
+    },
+    "/api/parts/{id}": {
+      "get": {
+        "summary": "Buscar peça por ID",
+        "tags": [
+          "Parts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Peça encontrada"
+          },
+          "404": {
+            "description": "Peça não encontrada"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualizar peça",
+        "tags": [
+          "Parts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "unitPrice": {
+                    "type": "number"
+                  },
+                  "stockQuantity": {
+                    "type": "integer"
+                  },
+                  "minStockAlert": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Peça atualizada"
+          },
+          "404": {
+            "description": "Peça não encontrada"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remover peça",
+        "tags": [
+          "Parts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Peça removida"
+          },
+          "404": {
+            "description": "Peça não encontrada"
+          }
+        }
+      }
+    },
+    "/internal/clients/by-cpf/{cpfCnpj}": {
+      "get": {
+        "summary": "[Interno] Dados de autenticação do cliente por CPF/CNPJ",
+        "description": "Usado pela Lambda de autenticação (não acessa o banco diretamente). Protegido pelo header x-internal-api-key; não é exposto no API Gateway público.",
+        "tags": [
+          "Internal"
+        ],
+        "security": [
+          {
+            "internalApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cpfCnpj",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "11144477735"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cliente encontrado (inclui status e flag active)"
+          },
+          "401": {
+            "description": "Chave interna ausente ou inválida"
+          },
+          "404": {
+            "description": "Cliente não encontrado ou removido"
+          },
+          "422": {
+            "description": "CPF/CNPJ inválido"
+          }
+        }
+      }
+    },
+    "/api/clients": {
+      "get": {
+        "summary": "Listar clientes",
+        "tags": [
+          "Clients"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de clientes paginada"
+          }
+        }
+      },
+      "post": {
+        "summary": "Criar cliente",
+        "tags": [
+          "Clients"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "cpfCnpj",
+                  "email",
+                  "phone"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "João Silva"
+                  },
+                  "cpfCnpj": {
+                    "type": "string",
+                    "example": "111.444.777-35"
+                  },
+                  "email": {
+                    "type": "string",
+                    "example": "joao@email.com"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "11999887766"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cliente criado — copie o `data.id` para usar no cadastro de veículo"
+          },
+          "409": {
+            "description": "CPF/CNPJ ou e-mail já cadastrado"
+          },
+          "422": {
+            "description": "CPF/CNPJ inválido"
+          }
+        }
+      }
+    },
+    "/api/clients/{id}": {
+      "get": {
+        "summary": "Buscar cliente por ID",
+        "tags": [
+          "Clients"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cliente encontrado"
+          },
+          "404": {
+            "description": "Cliente não encontrado"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualizar cliente",
+        "tags": [
+          "Clients"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "João Silva Atualizado"
+                  },
+                  "email": {
+                    "type": "string",
+                    "example": "joao.novo@email.com"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "11988887777"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cliente atualizado com sucesso"
+          },
+          "404": {
+            "description": "Cliente não encontrado"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remover cliente (soft delete)",
+        "tags": [
+          "Clients"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Cliente removido com sucesso"
+          },
+          "404": {
+            "description": "Cliente não encontrado"
+          }
+        }
+      }
+    },
+    "/api/clients/{id}/status": {
+      "patch": {
+        "summary": "Alterar status do cliente (ATIVO, INATIVO, BLOQUEADO)",
+        "description": "Clientes que não estão ATIVO têm a emissão de token negada pela Lambda de autenticação. Requer perfil ADMIN.",
+        "tags": [
+          "Clients"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ATIVO",
+                      "INATIVO",
+                      "BLOQUEADO"
+                    ],
+                    "example": "INATIVO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status atualizado"
+          },
+          "403": {
+            "description": "Perfil sem permissão"
+          },
+          "404": {
+            "description": "Cliente não encontrado"
+          },
+          "422": {
+            "description": "Status inválido"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Registrar novo usuário",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "ADMIN",
+                      "MECHANIC"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuário criado com sucesso"
+          },
+          "409": {
+            "description": "E-mail já cadastrado"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Autenticar usuário",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token JWT retornado"
+          },
+          "401": {
+            "description": "Credenciais inválidas"
+          }
+        }
+      }
+    }
+  }
+}
